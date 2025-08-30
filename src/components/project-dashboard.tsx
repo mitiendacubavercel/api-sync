@@ -8,17 +8,20 @@ import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { EndpointCard } from './endpoint-card'
-import { Plus, Download, Upload } from 'lucide-react'
+import { Plus, Download, Upload, Trash2, AlertCircle } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { useRouter } from 'next/navigation'
 
 interface ProjectDashboardProps {
     projectId: string
 }
 
 export function ProjectDashboard({ projectId }: ProjectDashboardProps) {
+    const router = useRouter()
     const [project, setProject] = useState<Project | null>(null)
     const [loading, setLoading] = useState(true)
     const [isAddingEndpoint, setIsAddingEndpoint] = useState(false)
+    const [isDeleting, setIsDeleting] = useState(false)
     const [newEndpoint, setNewEndpoint] = useState({
         path: '',
         method: 'GET' as HTTPMethod
@@ -98,6 +101,19 @@ export function ProjectDashboard({ projectId }: ProjectDashboardProps) {
         }
     }
 
+    const handleDeleteProject = async () => {
+        try {
+            const response = await fetch(`/api/projects/${projectId}`, {
+                method: 'DELETE'
+            })
+
+            if (!response.ok) throw new Error('Failed to delete project')
+            
+            router.push('/')
+        } catch (error) {
+            console.error('Error deleting project:', error)
+        }
+    }
     const getStatusStats = () => {
         if (!project) return { synced: 0, conflict: 0, pending: 0, undefined: 0 }
 
@@ -145,6 +161,10 @@ export function ProjectDashboard({ projectId }: ProjectDashboardProps) {
                     <Button variant="outline" onClick={exportProject}>
                         <Download className="h-4 w-4 mr-2" />
                         Exportar
+                    </Button>
+                    <Button variant="outline" className="text-red-500 hover:text-red-700 hover:bg-red-50" onClick={() => setIsDeleting(true)}>
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Eliminar Proyecto
                     </Button>
                     <Dialog open={isAddingEndpoint} onOpenChange={setIsAddingEndpoint}>
                         <DialogTrigger asChild>
@@ -202,6 +222,37 @@ export function ProjectDashboard({ projectId }: ProjectDashboardProps) {
                     </Dialog>
                 </div>
             </div>
+
+            {/* Delete Project Confirmation Dialog */}
+            <Dialog open={isDeleting} onOpenChange={setIsDeleting}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2 text-red-600">
+                            <AlertCircle className="h-5 w-5" />
+                            Confirmar eliminación
+                        </DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                        <p>¿Estás seguro de que quieres eliminar el proyecto <strong>{project.name}</strong>? Esta acción no se puede deshacer y se eliminarán todos los endpoints asociados.</p>
+                        <div className="flex gap-2">
+                            <Button 
+                                variant="destructive" 
+                                onClick={handleDeleteProject}
+                                className="flex-1"
+                            >
+                                Eliminar Proyecto
+                            </Button>
+                            <Button
+                                variant="outline"
+                                onClick={() => setIsDeleting(false)}
+                                className="flex-1"
+                            >
+                                Cancelar
+                            </Button>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
 
             {/* Stats */}
             <div className="grid grid-cols-4 gap-4">
@@ -280,4 +331,3 @@ export function ProjectDashboard({ projectId }: ProjectDashboardProps) {
         </div>
     )
 }
-

@@ -5,16 +5,17 @@ import { Project } from '@/types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
-import { Plus, Calendar, ArrowRight } from 'lucide-react'
+import { Plus, Calendar, ArrowRight, Trash2, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
 
 export default function HomePage() {
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
   const [isCreating, setIsCreating] = useState(false)
+  const [isDeletingId, setIsDeletingId] = useState<string | null>(null)
   const [newProject, setNewProject] = useState({
     name: '',
     description: ''
@@ -55,6 +56,21 @@ export default function HomePage() {
       setIsCreating(false)
     } catch (error) {
       console.error('Error creating project:', error)
+    }
+  }
+
+  const handleDeleteProject = async (projectId: string) => {
+    try {
+      const response = await fetch(`/api/projects/${projectId}`, {
+        method: 'DELETE'
+      })
+
+      if (!response.ok) throw new Error('Failed to delete project')
+
+      setProjects(prev => prev.filter(project => project.id !== projectId))
+      setIsDeletingId(null)
+    } catch (error) {
+      console.error('Error deleting project:', error)
     }
   }
 
@@ -132,6 +148,37 @@ export default function HomePage() {
           </div>
         </div>
 
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={!!isDeletingId} onOpenChange={(open) => !open && setIsDeletingId(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-red-600">
+                <AlertCircle className="h-5 w-5" />
+                Confirmar eliminación
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <p>¿Estás seguro de que quieres eliminar este proyecto? Esta acción no se puede deshacer y se eliminarán todos los endpoints asociados.</p>
+              <div className="flex gap-2">
+                <Button 
+                  variant="destructive" 
+                  onClick={() => isDeletingId && handleDeleteProject(isDeletingId)}
+                  className="flex-1"
+                >
+                  Eliminar
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setIsDeletingId(null)}
+                  className="flex-1"
+                >
+                  Cancelar
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
         {/* Projects */}
         {projects.length === 0 ? (
           <Card className="text-center py-12">
@@ -153,15 +200,12 @@ export default function HomePage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {projects.map((project) => (
-              <Card key={project.id} className="hover:shadow-lg transition-shadow cursor-pointer">
+              <Card key={project.id} className="hover:shadow-lg transition-shadow">
+                <CardHeader>
+                  <CardTitle className="truncate">{project.name}</CardTitle>
+                </CardHeader>
                 <Link href={`/project/${project.id}`}>
-                  <CardHeader>
-                    <CardTitle className="flex items-center justify-between">
-                      <span className="truncate">{project.name}</span>
-                      <ArrowRight className="h-5 w-5 text-gray-400" />
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
+                  <CardContent className="cursor-pointer">
                     {project.description && (
                       <p className="text-gray-600 text-sm mb-4 line-clamp-2">
                         {project.description}
@@ -175,9 +219,24 @@ export default function HomePage() {
                       <div>
                         {project.endpoints?.length || 0} endpoints
                       </div>
+                      <ArrowRight className="h-4 w-4 ml-auto text-gray-400" />
                     </div>
                   </CardContent>
                 </Link>
+                <CardFooter className="pt-0 pb-3">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="text-red-500 hover:text-red-700 hover:bg-red-50 ml-auto"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setIsDeletingId(project.id);
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4 mr-1" />
+                    Eliminar
+                  </Button>
+                </CardFooter>
               </Card>
             ))}
           </div>

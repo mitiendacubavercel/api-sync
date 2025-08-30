@@ -84,4 +84,29 @@ export class ProjectService {
             client.release()
         }
     }
+
+    static async deleteProject(id: string): Promise<boolean> {
+        const client = await pool.connect()
+        try {
+            // Verificar si el proyecto existe
+            const checkResult = await client.query(
+                'SELECT id FROM projects WHERE id = $1',
+                [id]
+            )
+            
+            if (checkResult.rows.length === 0) {
+                return false
+            }
+
+            // Eliminar el proyecto (los endpoints se eliminarán automáticamente por la restricción ON DELETE CASCADE)
+            await client.query(
+                'DELETE FROM projects WHERE id = $1',
+                [id]
+            )
+            
+            return true
+        } finally {
+            client.release()
+        }
+    }
 }

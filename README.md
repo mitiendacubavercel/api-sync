@@ -17,3 +17,6 @@ Una aplicación web colaborativa tipo "pizarra digital" para sincronizar las nec
 ```bash
 git clone <tu-repo>
 cd api-sync-board
+
+
+quiero q pongas una opcion de importar donde se puedan importar en un json, los endpoints, pon un texto aclaratorio de cual es la estructura q tiene q cumplir el json para poder importarse 
