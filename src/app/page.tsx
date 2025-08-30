@@ -1,103 +1,188 @@
-import Image from "next/image";
+'use client'
 
-export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+import { useState, useEffect } from 'react'
+import { Project } from '@/types'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Textarea } from '@/components/ui/textarea'
+import { Plus, Calendar, ArrowRight } from 'lucide-react'
+import Link from 'next/link'
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+export default function HomePage() {
+  const [projects, setProjects] = useState<Project[]>([])
+  const [loading, setLoading] = useState(true)
+  const [isCreating, setIsCreating] = useState(false)
+  const [newProject, setNewProject] = useState({
+    name: '',
+    description: ''
+  })
+
+  useEffect(() => {
+    loadProjects()
+  }, [])
+
+  const loadProjects = async () => {
+    try {
+      const response = await fetch('/api/projects')
+      if (!response.ok) throw new Error('Failed to load projects')
+      const projectsData = await response.json()
+      setProjects(projectsData)
+    } catch (error) {
+      console.error('Error loading projects:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleCreateProject = async () => {
+    if (!newProject.name.trim()) return
+
+    try {
+      const response = await fetch('/api/projects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newProject)
+      })
+
+      if (!response.ok) throw new Error('Failed to create project')
+
+      const project = await response.json()
+      setProjects(prev => [project, ...prev])
+      setNewProject({ name: '', description: '' })
+      setIsCreating(false)
+    } catch (error) {
+      console.error('Error creating project:', error)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p>Cargando proyectos...</p>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      </div>
+    )
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="container mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-4xl font-bold text-gray-900">
+                API Sync Board
+              </h1>
+              <p className="text-gray-600 mt-2">
+                Sincroniza las especificaciones entre Frontend y Backend
+              </p>
+            </div>
+            <Dialog open={isCreating} onOpenChange={setIsCreating}>
+              <DialogTrigger asChild>
+                <Button size="lg">
+                  <Plus className="h-5 w-5 mr-2" />
+                  Nuevo Proyecto
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Crear Nuevo Proyecto</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="projectName">Nombre del Proyecto</Label>
+                    <Input
+                      id="projectName"
+                      value={newProject.name}
+                      onChange={(e) => setNewProject(prev => ({ ...prev, name: e.target.value }))}
+                      placeholder="Mi API Project"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="projectDescription">Descripción (opcional)</Label>
+                    <Textarea
+                      id="projectDescription"
+                      value={newProject.description}
+                      onChange={(e) => setNewProject(prev => ({ ...prev, description: e.target.value }))}
+                      placeholder="Describe tu proyecto..."
+                      rows={3}
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button onClick={handleCreateProject} className="flex-1">
+                      Crear Proyecto
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => setIsCreating(false)}
+                      className="flex-1"
+                    >
+                      Cancelar
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </div>
+
+        {/* Projects */}
+        {projects.length === 0 ? (
+          <Card className="text-center py-12">
+            <CardContent>
+              <div className="max-w-md mx-auto">
+                <div className="text-6xl mb-4">🚀</div>
+                <h3 className="text-xl font-semibold mb-2">¡Comienza tu primer proyecto!</h3>
+                <p className="text-gray-600 mb-6">
+                  Crea un proyecto para empezar a sincronizar las especificaciones de tu API
+                  entre el equipo de frontend y backend.
+                </p>
+                <Button onClick={() => setIsCreating(true)} size="lg">
+                  <Plus className="h-5 w-5 mr-2" />
+                  Crear Proyecto
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {projects.map((project) => (
+              <Card key={project.id} className="hover:shadow-lg transition-shadow cursor-pointer">
+                <Link href={`/project/${project.id}`}>
+                  <CardHeader>
+                    <CardTitle className="flex items-center justify-between">
+                      <span className="truncate">{project.name}</span>
+                      <ArrowRight className="h-5 w-5 text-gray-400" />
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {project.description && (
+                      <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+                        {project.description}
+                      </p>
+                    )}
+                    <div className="flex items-center gap-4 text-sm text-gray-500">
+                      <div className="flex items-center gap-1">
+                        <Calendar className="h-4 w-4" />
+                        {new Date(project.createdAt).toLocaleDateString()}
+                      </div>
+                      <div>
+                        {project.endpoints?.length || 0} endpoints
+                      </div>
+                    </div>
+                  </CardContent>
+                </Link>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
-  );
+  )
 }
